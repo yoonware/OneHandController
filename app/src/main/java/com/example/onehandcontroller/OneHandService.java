@@ -6,6 +6,7 @@ import android.gesture.Gesture;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Build;
+import android.text.Layout;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -25,16 +26,24 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class OneHandService extends AccessibilityService {
 
+    private static final int CLICK_MODE = 0;
+    private static final int MOVE_MODE = 1;
+
     private LinearLayout floatingLayout;
     private View cursorView;
     private View swipeView;
+
+    private int controlPadWidth = 500;
+    private int controlPadHeight = 500;
 
     private WindowManager wm;
     private WindowManager.LayoutParams params;
     private WindowManager.LayoutParams cursorParams;
     private boolean isDown = false;
+    private boolean isModeChange = false;
     private int cursorX = 0, cursorY = 0;
     private int lastX, lastY;
+    private int curMode = CLICK_MODE;
 
     private int LAYOUT_FLAG;
 
@@ -57,9 +66,13 @@ public class OneHandService extends AccessibilityService {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT);
 
-        params.height = 500;
-        params.width = 500;
-        params.gravity = Gravity.BOTTOM | Gravity.RIGHT;        //Initially view will be added to top-left corner
+        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
+        int width = dm.widthPixels;
+        int height = dm.heightPixels;
+        params.height = controlPadHeight;
+        params.width = controlPadWidth;
+        params.x = width / 2;
+        params.y = height / 2;
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         // add overlay
@@ -75,6 +88,7 @@ public class OneHandService extends AccessibilityService {
             }
             public void onSwipeLeft() {
                 Log.e("플링", "왼");
+                /*
                 params = new WindowManager.LayoutParams(
                         WindowManager.LayoutParams.MATCH_PARENT,
                         WindowManager.LayoutParams.WRAP_CONTENT,
@@ -103,6 +117,9 @@ public class OneHandService extends AccessibilityService {
                 cursorParams.height = 100;
                 cursorParams.width = 100;
                 wm.addView(cursorView, cursorParams);
+                */
+                floatingLayout.setVisibility(View.VISIBLE);
+                cursorView.setVisibility(View.VISIBLE);
             }
             public void onSwipeBottom() {
                 Log.e("플링", "아래");
@@ -146,8 +163,10 @@ public class OneHandService extends AccessibilityService {
             @Override
             public void onClick(View v) {
                 //stopSelf();
-                wm.removeViewImmediate(floatingLayout);
-                wm.removeViewImmediate(cursorView);
+                //wm.removeViewImmediate(floatingLayout);
+                //wm.removeViewImmediate(cursorView);
+                floatingLayout.setVisibility(View.GONE);
+                cursorView.setVisibility(View.GONE);
             }
         });
 
@@ -156,7 +175,9 @@ public class OneHandService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-
+        if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+            Log.v("click", "click");
+        }
     }
 
     @Override
@@ -167,8 +188,8 @@ public class OneHandService extends AccessibilityService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        floatingLayout.setVisibility(View.GONE);
-        cursorView.setVisibility(View.GONE);
+        wm.removeViewImmediate(floatingLayout);
+        wm.removeViewImmediate(cursorView);
         floatingLayout = null;
         cursorView = null;
     }
@@ -178,18 +199,36 @@ public class OneHandService extends AccessibilityService {
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
                 Log.v("single tap", "occur");
-                DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
-                int width = dm.widthPixels;
-                int height = dm.heightPixels;
-                clickByCor(cursorX + width / 2, cursorY + height / 2);
-                Toast.makeText(OneHandService.this, "클릭!", Toast.LENGTH_SHORT).show();
+                switch (curMode) {
+                    case CLICK_MODE:
+                        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
+                        int width = dm.widthPixels;
+                        int height = dm.heightPixels;
+                        clickByCor(cursorX + width / 2, cursorY + height / 2);
+                        Log.v("event", "cursorX : " + (cursorX + width / 2) + ", cursorY : " + (cursorY + height / 2));
+                        Toast.makeText(OneHandService.this, "클릭!", Toast.LENGTH_SHORT).show();
+                        break;
+                    case MOVE_MODE:
+                        break;
+                }
                 return super.onSingleTapUp(e);
+            }
+
+
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                Log.v("double tap", "occur");
+                //curMode = (curMode + 1) % 2;
+                isModeChange = true;
+                return super.onDoubleTap(e);
             }
         });
         floatingLayout.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 detector.onTouchEvent(event);
+
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         isDown = true;
@@ -198,16 +237,24 @@ public class OneHandService extends AccessibilityService {
                         break;
                     case MotionEvent.ACTION_MOVE:
                         if(isDown) {
-                            cursorX += event.getX() - lastX;
-                            cursorY += event.getY() - lastY;
+                            if(curMode == CLICK_MODE) {
+                                cursorX += event.getX() - lastX;
+                                cursorY += event.getY() - lastY;
+                                cursorParams.x = cursorX;
+                                cursorParams.y = cursorY;
+                                wm.updateViewLayout(cursorView, cursorParams);
+                            } else if(curMode == MOVE_MODE) {
+                                params.x += event.getX() - lastX;
+                                params.y += event.getY() - lastY;
+                                wm.updateViewLayout(floatingLayout, params);
+                            }
+
                             lastX = (int) event.getX();
                             lastY = (int) event.getY();
-                            cursorParams.x = cursorX;
-                            cursorParams.y = cursorY;
-                            wm.updateViewLayout(cursorView, cursorParams);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
+                        isModeChange = false;
                         isDown = false;
                         break;
                 }
