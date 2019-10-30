@@ -19,8 +19,6 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -154,8 +152,8 @@ public class OneHandService extends AccessibilityService {
         }
         cursorParams.x = cursorX;
         cursorParams.y = cursorY;
-        cursorParams.height = 100;
-        cursorParams.width = 100;
+        cursorParams.height = 60;
+        cursorParams.width = 60;
         wm.addView(cursorView, cursorParams);
 
         Button btn = floatingLayout.findViewById(R.id.btn);
@@ -206,7 +204,6 @@ public class OneHandService extends AccessibilityService {
                         int height = dm.heightPixels;
                         clickByCor(cursorX + width / 2, cursorY + height / 2);
                         Log.v("event", "cursorX : " + (cursorX + width / 2) + ", cursorY : " + (cursorY + height / 2));
-                        Toast.makeText(OneHandService.this, "클릭!", Toast.LENGTH_SHORT).show();
                         break;
                     case MOVE_MODE:
                         break;
