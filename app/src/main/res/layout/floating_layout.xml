@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:gravity="left"
+    android:background="#ffffff">
+
+    <Button
+        android:id="@+id/btn"
+        android:text="x"
+        android:textSize="20sp"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:background="#2259FF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</LinearLayout>
