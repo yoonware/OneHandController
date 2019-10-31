@@ -235,8 +235,8 @@ public class OneHandService extends AccessibilityService {
                     case MotionEvent.ACTION_MOVE:
                         if(isDown) {
                             if(curMode == CLICK_MODE) {
-                                cursorX += event.getX() - lastX;
-                                cursorY += event.getY() - lastY;
+                                cursorX += (event.getX() - lastX)* 1.5f;
+                                cursorY += (event.getY() - lastY) * 1.5f;
                                 cursorParams.x = cursorX;
                                 cursorParams.y = cursorY;
                                 wm.updateViewLayout(cursorView, cursorParams);
