@@ -6,14 +6,27 @@
     android:layout_height="50dp"
     android:gravity="left"
     android:background="@drawable/round_button">
+    <LinearLayout
+        android:id="@+id/topBarLayout"
+        android:layout_width="match_parent"
+        android:background="#00000000"
+        android:orientation="vertical"
+        android:layout_height="10dp"/>
+    <LinearLayout
+        android:id="@+id/floatingPad"
+        android:orientation="vertical"
+        android:gravity="left"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Button
+            android:id="@+id/btn"
+            android:layout_width="20dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_height="20dp"
+            android:background="@drawable/x_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/btn"
-        android:layout_width="20dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginTop="5dp"
-        android:layout_height="20dp"
-        android:background="@drawable/x_icon"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 </LinearLayout>
