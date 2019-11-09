@@ -3,7 +3,10 @@ package com.example.onehandcontroller;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,17 +14,15 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.View;
 import android.view.accessibility.AccessibilityManager;
-import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 import java.util.List;
 
-import static android.content.Context.*;
-
 public class MainActivity extends AppCompatActivity {
-
-    Button button;
+    private Switch oneHandModeSwitch;
+    private ComponentName runningService = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +33,33 @@ public class MainActivity extends AppCompatActivity {
             setAccessibilityPermissions();
         }
 
-        button = findViewById(R.id.button);
+        oneHandModeSwitch = findViewById(R.id.oneHandModeSwitch);
+        if(isServiceRunning(OneHandService.class)) {
+            oneHandModeSwitch.setChecked(true);
+        }
+        oneHandModeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                        if(Settings.canDrawOverlays(getApplicationContext())) {
+                            runningService = startService(new Intent(getApplicationContext(), OneHandService.class));
+                        }
+                        else {
+                            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplicationContext().getPackageName())));
+                        }
+                    }
+                } else {
+                    if(isServiceRunning(OneHandService.class)) {
+                        if(runningService != null) {
+
+                        }
+                    }
+                }
+            }
+        });
+
+        /*button = findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -45,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        });
+        });*/
     }
 
     public boolean checkAccessibilityPermissions() {
@@ -70,5 +97,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }).create().show();
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                runningService = service.service;
+                return true;
+            }
+        }
+        return false;
     }
 }

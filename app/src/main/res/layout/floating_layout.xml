@@ -5,7 +5,7 @@
     android:layout_width="50dp"
     android:layout_height="50dp"
     android:gravity="left"
-    android:background="#88ffffff">
+    android:background="@drawable/round_button">
 
     <Button
         android:id="@+id/btn"
