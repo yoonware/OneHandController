@@ -19,11 +19,16 @@ import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.Toast;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private Switch oneHandModeSwitch;
+
+    private Switch serviceSwitch;
+    private Switch padSwitch;
+    private Switch rightSwipeSwitch;
+    private Switch leftSwipeSwitch;
     private ComponentName runningService = null;
 
     @Override
@@ -33,18 +38,23 @@ public class MainActivity extends AppCompatActivity {
 
         setUserInterface();
 
+        serviceSwitch = findViewById(R.id.serviceSwitch);
+        padSwitch = findViewById(R.id.padSwitch);
+        rightSwipeSwitch = findViewById(R.id.rightSwipeSwitch);
+        leftSwipeSwitch = findViewById(R.id.leftSwipeSwitch);
+
         if(!checkAccessibilityPermissions()) {
             setAccessibilityPermissions();
         }
 
-        oneHandModeSwitch = findViewById(R.id.oneHandModeSwitch);
         if(isServiceRunning(OneHandService.class)) {
-            oneHandModeSwitch.setChecked(true);
+            serviceSwitch.setChecked(true);
         }
-        oneHandModeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+        serviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b) {
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if(isChecked) {
                     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                         if(Settings.canDrawOverlays(getApplicationContext())) {
                             runningService = startService(new Intent(getApplicationContext(), OneHandService.class));
@@ -53,30 +63,14 @@ public class MainActivity extends AppCompatActivity {
                             startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplicationContext().getPackageName())));
                         }
                     }
-                } else {
-                    if(isServiceRunning(OneHandService.class)) {
-                        if(runningService != null) {
+                }
+                else {
+                    if(runningService != null) {
 
-                        }
                     }
                 }
             }
         });
-
-        /*button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                    if(Settings.canDrawOverlays(getApplicationContext())) {
-                        startService(new Intent(MainActivity.this, OneHandService.class));
-                    }
-                    else {
-                        startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplicationContext().getPackageName())));
-                    }
-                }
-            }
-        });*/
     }
 
     private void setUserInterface() {

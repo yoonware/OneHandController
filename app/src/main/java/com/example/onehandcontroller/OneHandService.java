@@ -2,12 +2,14 @@ package com.example.onehandcontroller;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -21,6 +23,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 public class OneHandService extends AccessibilityService {
 
@@ -41,8 +44,9 @@ public class OneHandService extends AccessibilityService {
 
     private WindowManager wm;
     private WindowManager.LayoutParams floatingPadLayoutParams;
-    private WindowManager.LayoutParams swipeVerticalParams;
+    private WindowManager.LayoutParams swipeParams;
     private WindowManager.LayoutParams cursorParams;
+
     private boolean isDown = false;
     private boolean isModeChange = false;
     private boolean isShowPad = false;
@@ -51,6 +55,8 @@ public class OneHandService extends AccessibilityService {
     private int curMode = CLICK_MODE;
 
     private int LAYOUT_FLAG;
+
+    private Vibrator vibrator;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -87,6 +93,7 @@ public class OneHandService extends AccessibilityService {
         swipeView.setOnTouchListener(new OnSwipeTouchListener(getApplicationContext()) {
             public void onSwipeTop() {
                 Log.e("플링", "위");
+                Toast.makeText(OneHandService.this, "종료 ", Toast.LENGTH_SHORT).show();
                 disableSelf();
             }
             public void onSwipeRight() {
@@ -105,25 +112,25 @@ public class OneHandService extends AccessibilityService {
             }
         });
 
-        swipeVerticalParams = new WindowManager.LayoutParams(
+        swipeParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 LAYOUT_FLAG,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT);
 
-        swipeVerticalParams.height = displayHeight / 3;
-        swipeVerticalParams.width = 50;
-        swipeVerticalParams.gravity = Gravity.RIGHT;        //Initially view will be added to top-left corner
-        swipeVerticalParams.y = displayHeight - swipeVerticalParams.height - displayHeight / 2;
+        swipeParams.height = displayHeight / 3;
+        swipeParams.width = 50;
+        swipeParams.gravity = Gravity.RIGHT;        //Initially view will be added to top-left corner
+        swipeParams.y = displayHeight - swipeParams.height - displayHeight / 2;
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         // add overlay
-        wm.addView(swipeView, swipeVerticalParams);
+        wm.addView(swipeView, swipeParams);
 
 
 
-        cursorView = LayoutInflater.from(this).inflate(R.layout.cursor_view, null);
+        cursorView = LayoutInflater.from(this).inflate(R.layout.view_cursor, null);
         cursorParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_PANEL,
@@ -150,6 +157,8 @@ public class OneHandService extends AccessibilityService {
             }
         });
 
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -157,7 +166,6 @@ public class OneHandService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             Log.v("click", "click");
-
         }
     }
 
@@ -168,11 +176,11 @@ public class OneHandService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         wm.removeViewImmediate(floatingLayout);
         wm.removeViewImmediate(cursorView);
         floatingLayout = null;
         cursorView = null;
+        super.onDestroy();
     }
 
     private void setFloatingViewListener() {
@@ -182,6 +190,7 @@ public class OneHandService extends AccessibilityService {
                 Log.v("single tap", "occur");
                 switch (curMode) {
                     case CLICK_MODE:
+                        vibrator.vibrate(3);
                         performGesture(createSingleTap(cursorX + displayWidth / 2 + cursorWidth / 2, cursorY + displayHeight / 2 + cursorHeight / 2));
                         Log.v("event", "cursorX : " + (cursorX + displayWidth / 2) + ", cursorY : " + (cursorY + displayHeight / 2));
                         break;
@@ -199,8 +208,6 @@ public class OneHandService extends AccessibilityService {
                 performGlobalAction(GLOBAL_ACTION_BACK);
                 return super.onDoubleTap(e);
             }
-
-
 
             @Override
             public void onLongPress(MotionEvent e) {
