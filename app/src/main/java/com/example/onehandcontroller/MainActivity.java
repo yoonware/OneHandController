@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.CompoundButton;
@@ -36,15 +37,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        setUserInterface();
+        setStatusBar();
 
         serviceSwitch = findViewById(R.id.serviceSwitch);
         padSwitch = findViewById(R.id.padSwitch);
         rightSwipeSwitch = findViewById(R.id.rightSwipeSwitch);
         leftSwipeSwitch = findViewById(R.id.leftSwipeSwitch);
 
-        if(!checkAccessibilityPermissions()) {
-            setAccessibilityPermissions();
+        if(!isAccessibilityEnable()) {
+            setAccessibilityPermission();
         }
 
         if(isServiceRunning(OneHandService.class)) {
@@ -55,7 +56,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {
-                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                    if(!isAccessibilityEnable()) {
+                        setAccessibilityPermission();
+                        serviceSwitch.setChecked(false);
+                    }
+                    else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                         if(Settings.canDrawOverlays(getApplicationContext())) {
                             runningService = startService(new Intent(getApplicationContext(), OneHandService.class));
                         }
@@ -73,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setUserInterface() {
+    private void setStatusBar() {
         View view = getWindow().getDecorView();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (view != null) {
@@ -83,19 +88,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean checkAccessibilityPermissions() {
-        AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
-        List<AccessibilityServiceInfo> list = accessibilityManager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.DEFAULT);
-        for (int i = 0; i < list.size(); i++) {
-            AccessibilityServiceInfo info = list.get(i);
-            if (info.getResolveInfo().serviceInfo.packageName.equals(getApplication().getPackageName())) {
-                return true;
-            }
-        }
-        return false;
+    private boolean isAccessibilityEnable() {
+        String prefString = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        return prefString != null && prefString.contains(getPackageName() + "/" + OneHandService.class.getName());
     }
 
-    private void setAccessibilityPermissions() {
+    private void setAccessibilityPermission() {
         AlertDialog.Builder gsDialog = new AlertDialog.Builder(this);
         gsDialog.setTitle("접근성 권한 설정");
         gsDialog.setMessage("접근성 권한을 필요로 합니다");
