@@ -10,10 +10,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.CompoundButton;
 import android.widget.Switch;
@@ -28,6 +30,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        setUserInterface();
 
         if(!checkAccessibilityPermissions()) {
             setAccessibilityPermissions();
@@ -75,7 +79,17 @@ public class MainActivity extends AppCompatActivity {
         });*/
     }
 
-    public boolean checkAccessibilityPermissions() {
+    private void setUserInterface() {
+        View view = getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (view != null) {
+                view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                getWindow().setStatusBarColor(Color.parseColor("#f2f2f2"));
+            }
+        }
+    }
+
+    private boolean checkAccessibilityPermissions() {
         AccessibilityManager accessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
         List<AccessibilityServiceInfo> list = accessibilityManager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.DEFAULT);
         for (int i = 0; i < list.size(); i++) {
@@ -87,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    public void setAccessibilityPermissions() {
+    private void setAccessibilityPermissions() {
         AlertDialog.Builder gsDialog = new AlertDialog.Builder(this);
         gsDialog.setTitle("접근성 권한 설정");
         gsDialog.setMessage("접근성 권한을 필요로 합니다");

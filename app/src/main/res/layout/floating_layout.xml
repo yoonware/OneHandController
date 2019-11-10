@@ -5,7 +5,7 @@
     android:layout_width="50dp"
     android:layout_height="50dp"
     android:gravity="left"
-    android:background="@drawable/round_button">
+    android:background="@drawable/shape_pad">
     <LinearLayout
         android:id="@+id/topBarLayout"
         android:layout_width="match_parent"
