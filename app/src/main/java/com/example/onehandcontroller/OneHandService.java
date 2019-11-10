@@ -34,6 +34,9 @@ public class OneHandService extends AccessibilityService {
     private View cursorView;
     private View swipeView;
 
+    private boolean leftSwipeFlag = false;
+    private boolean alwaysPadFlag = false;
+
     private int controlPadWidth = 500;
     private int controlPadHeight = 500;
 
@@ -63,6 +66,8 @@ public class OneHandService extends AccessibilityService {
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
         displayWidth = dm.widthPixels;
         displayHeight = dm.heightPixels;
+        leftSwipeFlag = intent.getBooleanExtra("leftSwipe", false);
+        alwaysPadFlag = intent.getBooleanExtra("alwaysPad", false);
 
         floatingLayout = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.floating_layout, null);
         setFloatingViewListener();
@@ -83,6 +88,9 @@ public class OneHandService extends AccessibilityService {
         floatingPadLayoutParams.height = controlPadHeight;
         floatingPadLayoutParams.width = controlPadWidth;
         floatingPadLayoutParams.x = displayWidth / 2;
+        if(leftSwipeFlag) {
+            floatingPadLayoutParams.x *= -1;
+        }
         floatingPadLayoutParams.y = displayHeight / 2;
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -94,21 +102,25 @@ public class OneHandService extends AccessibilityService {
             public void onSwipeTop() {
                 Log.e("플링", "위");
                 Toast.makeText(OneHandService.this, "종료 ", Toast.LENGTH_SHORT).show();
-                disableSelf();
+                removeAllViews();
             }
             public void onSwipeRight() {
                 Log.e("플링", "오른");
+                if(!isShowPad && leftSwipeFlag) {
+                    showPad();
+                }
             }
             public void onSwipeLeft() {
                 Log.e("플링", "왼");
-                if(!isShowPad) {
-                    floatingLayout.setVisibility(View.VISIBLE);
-                    cursorView.setVisibility(View.VISIBLE);
-                    isShowPad = true;
+                if(!isShowPad && !leftSwipeFlag) {
+                    showPad();
                 }
             }
             public void onSwipeBottom() {
                 Log.e("플링", "아래");
+                if(isShowPad && !alwaysPadFlag) {
+                    hidePad();
+                }
             }
         });
 
@@ -121,8 +133,11 @@ public class OneHandService extends AccessibilityService {
 
         swipeParams.height = displayHeight / 3;
         swipeParams.width = 50;
-        swipeParams.gravity = Gravity.RIGHT;        //Initially view will be added to top-left corner
-        swipeParams.y = displayHeight - swipeParams.height - displayHeight / 2;
+        swipeParams.gravity = Gravity.RIGHT;
+        if(leftSwipeFlag) {
+            swipeParams.gravity = Gravity.LEFT;
+        }
+        swipeParams.y = displayHeight - swipeParams.height / 2 - displayHeight / 2;
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         // add overlay
@@ -151,9 +166,7 @@ public class OneHandService extends AccessibilityService {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                floatingLayout.setVisibility(View.GONE);
-                cursorView.setVisibility(View.GONE);
-                isShowPad = false;
+                hidePad();
             }
         });
 
@@ -162,9 +175,52 @@ public class OneHandService extends AccessibilityService {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    private void showPad() {
+        floatingLayout.setVisibility(View.VISIBLE);
+        cursorView.setVisibility(View.VISIBLE);
+        isShowPad = true;
+    }
+
+    private void hidePad() {
+        floatingLayout.setVisibility(View.GONE);
+        cursorView.setVisibility(View.GONE);
+        isShowPad = false;
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+            if(event.getPackageName().equals("com.example.onehandcontroller")) {
+                try {
+                    String contentDescription = event.getSource().getContentDescription().toString();
+                    if(contentDescription.equals("padTurnSwitch") && !event.getSource().isChecked()) {
+                        removeAllViews();
+                    } else if(contentDescription.equals("alwaysPadSwitch")) {
+                        if(event.getSource().isChecked()) {
+                            showPad();
+                            alwaysPadFlag = true;
+                        } else {
+                            alwaysPadFlag = false;
+                        }
+                    } else if(contentDescription.equals("rightSwipeSwitch")) {
+                        if(event.getSource().isChecked()) {
+                            swipeParams.gravity = Gravity.RIGHT;
+                        } else {
+                            swipeParams.gravity = Gravity.LEFT;
+                        }
+                        wm.updateViewLayout(swipeView, swipeParams);
+                    } else if(contentDescription.equals("leftSwipeSwitch")) {
+                        if(event.getSource().isChecked()) {
+                            swipeParams.gravity = Gravity.LEFT;
+                        } else {
+                            swipeParams.gravity = Gravity.RIGHT;
+                        }
+                        wm.updateViewLayout(swipeView, swipeParams);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             Log.v("click", "click");
         }
     }
@@ -176,10 +232,7 @@ public class OneHandService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
-        wm.removeViewImmediate(floatingLayout);
-        wm.removeViewImmediate(cursorView);
-        floatingLayout = null;
-        cursorView = null;
+        removeAllViews();
         super.onDestroy();
     }
 
@@ -211,6 +264,7 @@ public class OneHandService extends AccessibilityService {
 
             @Override
             public void onLongPress(MotionEvent e) {
+                vibrator.vibrate(500);
                 performGesture(createLongClick(cursorX + displayWidth / 2 + cursorWidth / 2, cursorY + displayHeight / 2 + cursorHeight / 2));
                 super.onLongPress(e);
             }
@@ -379,5 +433,14 @@ public class OneHandService extends AccessibilityService {
                 clickAtPosition(x, y, node.getChild(i));
             }
         }
+    }
+
+    private void removeAllViews() {
+        wm.removeViewImmediate(floatingLayout);
+        wm.removeViewImmediate(cursorView);
+        wm.removeViewImmediate(swipeView);
+        floatingLayout = null;
+        cursorView = null;
+        swipeView = null;
     }
 }

@@ -3,26 +3,20 @@ package com.example.onehandcontroller;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
-import android.view.accessibility.AccessibilityManager;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.Toast;
-
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private Switch rightSwipeSwitch;
     private Switch leftSwipeSwitch;
     private ComponentName runningService = null;
+    private boolean leftSwipeFlag = false;
+    private boolean alwaysPadFlag = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +44,19 @@ public class MainActivity extends AppCompatActivity {
             setAccessibilityPermission();
         }
 
+        SharedPreferences sharedPreferences = getSharedPreferences("preference", MODE_PRIVATE);
+        alwaysPadFlag = sharedPreferences.getBoolean("alwaysPad", false);
+        leftSwipeFlag = sharedPreferences.getBoolean("leftSwipe", false);
+
+        if(alwaysPadFlag) {
+            padSwitch.setChecked(true);
+        }
+        if(leftSwipeFlag) {
+            turnOnLeftSwipe();
+        } else {
+            turnOnRightSwipe();
+        }
+
         if(isServiceRunning(OneHandService.class)) {
             serviceSwitch.setChecked(true);
         }
@@ -62,7 +71,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
                         if(Settings.canDrawOverlays(getApplicationContext())) {
-                            runningService = startService(new Intent(getApplicationContext(), OneHandService.class));
+                            Intent intent = new Intent(getApplicationContext(), OneHandService.class);
+                            intent.putExtra("leftSwipe", leftSwipeFlag);
+                            intent.putExtra("alwaysPad", alwaysPadFlag);
+                            runningService = startService(intent);
                         }
                         else {
                             startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplicationContext().getPackageName())));
@@ -73,6 +85,45 @@ public class MainActivity extends AppCompatActivity {
                     if(runningService != null) {
 
                     }
+                }
+            }
+        });
+
+        padSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    alwaysPadFlag = true;
+                    SharedPreferences.Editor editor = getSharedPreferences("preference", MODE_PRIVATE).edit();
+                    editor.putBoolean("alwaysPad", true);
+                    editor.apply();
+                } else {
+                    alwaysPadFlag = false;
+                    SharedPreferences.Editor editor = getSharedPreferences("preference", MODE_PRIVATE).edit();
+                    editor.putBoolean("alwaysPad", false);
+                    editor.apply();
+                }
+            }
+        });
+
+        rightSwipeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    turnOnRightSwipe();
+                } else {
+                    turnOnLeftSwipe();
+                }
+            }
+        });
+
+        leftSwipeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    turnOnLeftSwipe();
+                } else {
+                    turnOnRightSwipe();
                 }
             }
         });
@@ -110,9 +161,28 @@ public class MainActivity extends AppCompatActivity {
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
                 runningService = service.service;
+                Intent intent = new Intent().setComponent(runningService);
                 return true;
             }
         }
         return false;
+    }
+
+    private void turnOnRightSwipe() {
+        rightSwipeSwitch.setChecked(true);
+        leftSwipeSwitch.setChecked(false);
+        leftSwipeFlag = false;
+        SharedPreferences.Editor editor = getSharedPreferences("preference", MODE_PRIVATE).edit();
+        editor.putBoolean("leftSwipe", false);
+        editor.apply();
+    }
+
+    private void turnOnLeftSwipe() {
+        rightSwipeSwitch.setChecked(false);
+        leftSwipeSwitch.setChecked(true);
+        leftSwipeFlag = true;
+        SharedPreferences.Editor editor = getSharedPreferences("preference", MODE_PRIVATE).edit();
+        editor.putBoolean("leftSwipe", true);
+        editor.apply();
     }
 }
