@@ -1,4 +1,4 @@
-package com.yoonware.onehandcontroller;
+package com.ohc.onehandcontroller;
 
 import androidx.appcompat.app.AppCompatActivity;
 
