@@ -1,4 +1,4 @@
-package com.example.onehandcontroller;
+package com.yoonware.onehandcontroller;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -78,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         else {
                             startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplicationContext().getPackageName())));
+                            serviceSwitch.setChecked(false);
                         }
                     }
                 }

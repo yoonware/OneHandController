@@ -1,4 +1,4 @@
-package com.example.onehandcontroller;
+package com.yoonware.onehandcontroller;
 
 import org.junit.Test;
 

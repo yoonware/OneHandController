@@ -1,4 +1,4 @@
-package com.example.onehandcontroller;
+package com.yoonware.onehandcontroller;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
@@ -189,6 +189,7 @@ public class OneHandService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+
         if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             if(event.getPackageName().equals("com.example.onehandcontroller")) {
                 try {
