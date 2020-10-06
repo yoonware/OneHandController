@@ -87,11 +87,11 @@ public class OneHandService extends AccessibilityService {
                 PixelFormat.TRANSLUCENT);
         floatingPadLayoutParams.height = controlPadHeight;
         floatingPadLayoutParams.width = controlPadWidth;
-        floatingPadLayoutParams.x = displayWidth / 2;
+        floatingPadLayoutParams.x = displayWidth / 2 - controlPadWidth / 2;
         if(leftSwipeFlag) {
             floatingPadLayoutParams.x *= -1;
         }
-        floatingPadLayoutParams.y = displayHeight / 2;
+        floatingPadLayoutParams.y = displayHeight / 2 - controlPadHeight / 2;
 
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         // add overlay
@@ -101,7 +101,7 @@ public class OneHandService extends AccessibilityService {
         swipeView.setOnTouchListener(new OnSwipeTouchListener(getApplicationContext()) {
             public void onSwipeTop() {
                 Log.e("플링", "위");
-                Toast.makeText(OneHandService.this, "종료 ", Toast.LENGTH_SHORT).show();
+                Toast.makeText(OneHandService.this, "한손모드 종료 ", Toast.LENGTH_SHORT).show();
                 removeAllViews();
             }
             public void onSwipeRight() {
@@ -132,7 +132,7 @@ public class OneHandService extends AccessibilityService {
                 PixelFormat.TRANSLUCENT);
 
         swipeParams.height = displayHeight / 3;
-        swipeParams.width = 50;
+        swipeParams.width = 70;
         swipeParams.gravity = Gravity.RIGHT;
         if(leftSwipeFlag) {
             swipeParams.gravity = Gravity.LEFT;
@@ -191,7 +191,7 @@ public class OneHandService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
         if(event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-            if(event.getPackageName().equals("com.example.onehandcontroller")) {
+            if(event.getPackageName().equals("com.ohc.onehandcontroller")) {
                 try {
                     String contentDescription = event.getSource().getContentDescription().toString();
                     if(contentDescription.equals("padTurnSwitch") && !event.getSource().isChecked()) {
@@ -206,15 +206,19 @@ public class OneHandService extends AccessibilityService {
                     } else if(contentDescription.equals("rightSwipeSwitch")) {
                         if(event.getSource().isChecked()) {
                             swipeParams.gravity = Gravity.RIGHT;
+                            leftSwipeFlag = false;
                         } else {
                             swipeParams.gravity = Gravity.LEFT;
+                            leftSwipeFlag = true;
                         }
                         wm.updateViewLayout(swipeView, swipeParams);
                     } else if(contentDescription.equals("leftSwipeSwitch")) {
                         if(event.getSource().isChecked()) {
                             swipeParams.gravity = Gravity.LEFT;
+                            leftSwipeFlag = false;
                         } else {
                             swipeParams.gravity = Gravity.RIGHT;
+                            leftSwipeFlag = true;
                         }
                         wm.updateViewLayout(swipeView, swipeParams);
                     }
@@ -265,7 +269,7 @@ public class OneHandService extends AccessibilityService {
 
             @Override
             public void onLongPress(MotionEvent e) {
-                vibrator.vibrate(500);
+                vibrator.vibrate(300);
                 performGesture(createLongClick(cursorX + displayWidth / 2 + cursorWidth / 2, cursorY + displayHeight / 2 + cursorHeight / 2));
                 super.onLongPress(e);
             }
